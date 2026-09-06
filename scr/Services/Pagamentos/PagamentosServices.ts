@@ -2,8 +2,7 @@ import prismaClient from "../../Prisma/PrismaClient"
 
 interface CadPagamentos {
     pedido_id: string,
-    metodo: "PIX" | "CARTAO" | "DINHEIRO",
-    valor: number
+    metodo: "PIX" | "CARTAO" | "DINHEIRO"
 }
 
 interface AltPagamentos {
@@ -13,15 +12,13 @@ interface AltPagamentos {
 
 class PagamentosServices {
 
-    async cadastrarPagamentos({
-        pedido_id,
-        metodo,
-        valor
-    }: CadPagamentos) {
-
+    async cadastrarPagamentos({ pedido_id, metodo }: CadPagamentos, cliente_id?: string) {
         const pedidoExiste = await prismaClient.pedidos.findFirst({
             where: {
-                id: pedido_id
+                id: pedido_id,
+                ...(cliente_id ? {
+                    cliente_id: cliente_id
+                } : {})
             }
         })
 
@@ -39,6 +36,8 @@ class PagamentosServices {
             throw new Error("Esse Pedido já possui um Pagamento")
         }
 
+        const valor = Number(pedidoExiste.valor_total)
+
         await prismaClient.pagamentos.create({
             data: {
                 pedido_id: pedido_id,
@@ -50,10 +49,13 @@ class PagamentosServices {
         return ({ dados: "Pagamento Cadastrado Com Sucesso" })
     }
 
-
-    async visualizarDadosGeral() {
-
+    async visualizarDadosGeral(cliente_id?: string) {
         const resposta = await prismaClient.pagamentos.findMany({
+            where: cliente_id ? {
+                pedido: {
+                    cliente_id: cliente_id
+                }
+            } : undefined,
             select: {
                 id: true,
                 pedido_id: true,
@@ -67,12 +69,15 @@ class PagamentosServices {
         return resposta
     }
 
-
-    async visualizarPagamentoUnico(id: string) {
-
+    async visualizarPagamentoUnico(id: string, cliente_id?: string) {
         const resposta = await prismaClient.pagamentos.findFirst({
             where: {
-                id: id
+                id: id,
+                ...(cliente_id ? {
+                    pedido: {
+                        cliente_id: cliente_id
+                    }
+                } : {})
             },
             select: {
                 id: true,
@@ -86,7 +91,6 @@ class PagamentosServices {
 
         return resposta
     }
-
 
     async alterarPagamentos({
         id,
@@ -116,9 +120,7 @@ class PagamentosServices {
         return ({ dados: "Pagamento Alterado Com Sucesso" })
     }
 
-
     async apagarPagamentos(id: string) {
-
         const idExiste = await prismaClient.pagamentos.findFirst({
             where: {
                 id: id

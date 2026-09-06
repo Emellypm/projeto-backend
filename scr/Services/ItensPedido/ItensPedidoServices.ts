@@ -3,31 +3,23 @@ import prismaClient from "../../Prisma/PrismaClient"
 interface CadItensPedido {
     pedido_id: string,
     produto_id: string,
-    quantidade: number,
-    preco_unitario: number,
-    subtotal: number
+    quantidade: number
 }
 
 interface AltItensPedido {
     id: string,
-    quantidade: number,
-    preco_unitario: number,
-    subtotal: number
+    quantidade: number
 }
 
 class ItensPedidoServices {
 
-    async cadastrarItensPedido({
-        pedido_id,
-        produto_id,
-        quantidade,
-        preco_unitario,
-        subtotal
-    }: CadItensPedido) {
-
+    async cadastrarItensPedido({ pedido_id, produto_id, quantidade }: CadItensPedido, cliente_id?: string) {
         const pedidoExiste = await prismaClient.pedidos.findFirst({
             where: {
-                id: pedido_id
+                id: pedido_id,
+                ...(cliente_id ? {
+                    cliente_id: cliente_id
+                } : {})
             }
         })
 
@@ -45,6 +37,9 @@ class ItensPedidoServices {
             throw new Error("Produto não Encontrado")
         }
 
+        const preco_unitario = Number(produtoExiste.preco)
+        const subtotal = preco_unitario * quantidade
+
         await prismaClient.itens_pedido.create({
             data: {
                 pedido_id: pedido_id,
@@ -58,10 +53,13 @@ class ItensPedidoServices {
         return ({ dados: "Item Adicionado ao Pedido Com Sucesso" })
     }
 
-
-    async visualizarDadosGeral() {
-
+    async visualizarDadosGeral(cliente_id?: string) {
         const resposta = await prismaClient.itens_pedido.findMany({
+            where: cliente_id ? {
+                pedido: {
+                    cliente_id: cliente_id
+                }
+            } : undefined,
             select: {
                 id: true,
                 pedido_id: true,
@@ -75,12 +73,15 @@ class ItensPedidoServices {
         return resposta
     }
 
-
-    async visualizarItemUnico(id: string) {
-
+    async visualizarItemUnico(id: string, cliente_id?: string) {
         const resposta = await prismaClient.itens_pedido.findFirst({
             where: {
-                id: id
+                id: id,
+                ...(cliente_id ? {
+                    pedido: {
+                        cliente_id: cliente_id
+                    }
+                } : {})
             },
             select: {
                 id: true,
@@ -95,23 +96,27 @@ class ItensPedidoServices {
         return resposta
     }
 
-
-    async alterarItensPedido({
-        id,
-        quantidade,
-        preco_unitario,
-        subtotal
-    }: AltItensPedido) {
-
-        const idExiste = await prismaClient.itens_pedido.findFirst({
+    async alterarItensPedido({ id, quantidade }: AltItensPedido, cliente_id?: string) {
+        const itemExiste = await prismaClient.itens_pedido.findFirst({
             where: {
-                id: id
+                id: id,
+                ...(cliente_id ? {
+                    pedido: {
+                        cliente_id: cliente_id
+                    }
+                } : {})
+            },
+            include: {
+                produto: true
             }
         })
 
-        if (!idExiste) {
+        if (!itemExiste) {
             throw new Error("Registro não Encontrado")
         }
+
+        const preco_unitario = Number(itemExiste.produto.preco)
+        const subtotal = preco_unitario * quantidade
 
         await prismaClient.itens_pedido.update({
             where: {
@@ -127,12 +132,15 @@ class ItensPedidoServices {
         return ({ dados: "Item Alterado Com Sucesso" })
     }
 
-
-    async apagarItensPedido(id: string) {
-
+    async apagarItensPedido(id: string, cliente_id?: string) {
         const idExiste = await prismaClient.itens_pedido.findFirst({
             where: {
-                id: id
+                id: id,
+                ...(cliente_id ? {
+                    pedido: {
+                        cliente_id: cliente_id
+                    }
+                } : {})
             }
         })
 

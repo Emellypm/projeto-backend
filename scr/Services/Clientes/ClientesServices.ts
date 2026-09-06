@@ -4,30 +4,15 @@ import { hash } from "bcryptjs";
 interface CadClientes {
     nome: string,
     senha: string,
-    telefone: string,
-    cep: string,
-    rua: string,
-    numero: string,
-    complemento: string,
-    bairro: string,
-    cidade: string,
-    estado: string
+    telefone: string
 }
-
 interface AltClientes {
     id: string,
-    telefone: string,
-    cep: string,
-    rua: string,
-    numero: string,
-    complemento: string,
-    bairro: string,
-    cidade: string,
-    estado: string
+    telefone: string
 }
 
 class ClientesServices {
-    async cadastrarClientes({ nome, senha, telefone, cep, rua, numero, complemento, bairro, cidade, estado }: CadClientes) {
+    async cadastrarClientes({ nome, senha, telefone }: CadClientes) {
         const telExiste = await prismaClient.clientes.findFirst({
             where: {
                 telefone: telefone
@@ -37,51 +22,28 @@ class ClientesServices {
         if (telExiste) {
             throw new Error("Telefone já Cadastrado")
         }
-
         const senhaHash = await hash(senha, 8)
-
         await prismaClient.clientes.create({
             data: {
                 nome: nome,
                 senha: senhaHash,
-                telefone: telefone,
-                cep: cep,
-                rua: rua,
-                numero: numero,
-                complemento: complemento,
-                bairro: bairro,
-                cidade: cidade,
-                estado: estado
+                telefone: telefone
             }
         })
-
         return ({ dados: "Dados Salvos Com Sucesso" })
     }
-
-
+    
     async visualizarDadosGeral() {
-
         const resposta = await prismaClient.clientes.findMany({
             select: {
                 id: true,
                 nome: true,
-                telefone: true,
-                cep: true,
-                rua: true,
-                numero: true,
-                complemento: true,
-                bairro: true,
-                cidade: true,
-                estado: true
+                telefone: true
             }
         })
-
         return resposta
     }
-
-
     async visualizarClienteUnico(id: string) {
-
         const resposta = await prismaClient.clientes.findFirst({
             where: {
                 id: id
@@ -89,83 +51,45 @@ class ClientesServices {
             select: {
                 id: true,
                 nome: true,
-                telefone: true,
-                cep: true,
-                rua: true,
-                numero: true,
-                complemento: true,
-                bairro: true,
-                cidade: true,
-                estado: true
+                telefone: true
             }
         })
-
         return resposta
     }
-
-
-    async alterarClientes({
-        id,
-        telefone,
-        cep,
-        rua,
-        numero,
-        complemento,
-        bairro,
-        cidade,
-        estado
-    }: AltClientes) {
-
+    async alterarClientes({ id, telefone }: AltClientes) {
         const idExiste = await prismaClient.clientes.findFirst({
             where: {
                 id: id
             }
         })
-
         if (!idExiste) {
             throw new Error("Registro não Encontrado")
         }
-
         await prismaClient.clientes.update({
             where: {
                 id: id
             },
             data: {
-                telefone: telefone,
-                cep: cep,
-                rua: rua,
-                numero: numero,
-                complemento: complemento,
-                bairro: bairro,
-                cidade: cidade,
-                estado: estado
+                telefone: telefone
             }
         })
-
         return ({ dados: "Dados Alterados Com Sucesso" })
     }
-
-
     async apagarClientes(id: string) {
-
         const idExiste = await prismaClient.clientes.findFirst({
             where: {
                 id: id
             }
         })
-
         if (!idExiste) {
             throw new Error("Registro não Encontrado")
         }
-
         await prismaClient.clientes.delete({
             where: {
                 id: id
             }
         })
-
         return ({ dados: "Registro Apagado com Sucesso" })
     }
-
 }
 export { ClientesServices }

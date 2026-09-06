@@ -7,17 +7,32 @@ class PedidosControllers {
     async cadastrarPedidos(req: Request, res: Response) {
 
         const {
-            cliente_id,
+            cep,
+            rua,
+            numero,
+            complemento,
+            bairro,
+            cidade,
+            estado,
             valor_subtotal,
             valor_entrega,
             valor_total,
             observacao
         } = req.body
 
+        const cliente_id = req.usuarioId
+
         const enviarDadosServices = new PedidosServices()
 
         const resposta = await enviarDadosServices.cadastrarPedidos({
             cliente_id,
+            cep,
+            rua,
+            numero,
+            complemento,
+            bairro,
+            cidade,
+            estado,
             valor_subtotal,
             valor_entrega,
             valor_total,
@@ -31,7 +46,11 @@ class PedidosControllers {
 
         const enviarDados = new PedidosServices()
 
-        const resposta = await enviarDados.visualizarDadosGeral()
+        const cliente_id = req.usuarioTipo === "CLIENTE"
+            ? req.usuarioId
+            : undefined
+
+        const resposta = await enviarDados.visualizarDadosGeral(cliente_id)
 
         return res.json(resposta)
     }
@@ -42,7 +61,11 @@ class PedidosControllers {
 
         const enviarDados = new PedidosServices()
 
-        const resposta = await enviarDados.visualizarPedidoUnico(id)
+        const cliente_id = req.usuarioTipo === "CLIENTE"
+            ? req.usuarioId
+            : undefined
+
+        const resposta = await enviarDados.visualizarPedidoUnico(id, cliente_id)
 
         return res.json(resposta)
     }

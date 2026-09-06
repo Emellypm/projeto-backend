@@ -26,7 +26,8 @@ class LogarUsuariosServices {
         const token = sign({
             id: emailExiste.id,
             nome: emailExiste.nome,
-            email: emailExiste.email
+            email: emailExiste.email,
+            tipo: "ADMIN"
         },
             process.env.JWT_SECRETO,
             {
