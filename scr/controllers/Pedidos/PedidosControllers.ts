@@ -4,8 +4,42 @@ import { PedidosServices } from "../../Services/Pedidos/PedidosServices"
 
 class PedidosControllers {
 
-    async cadastrarPedidos(req: Request, res: Response) {
+    async finalizarPedido(req: Request, res: Response) {
+        const {
+            cep,
+            rua,
+            numero,
+            complemento,
+            bairro,
+            cidade,
+            estado,
+            valor_entrega,
+            observacao,
+            metodo_pagamento,
+            itens
+        } = req.body
 
+        const enviarDados = new PedidosServices()
+
+        const resposta = await enviarDados.finalizarPedido({
+            cliente_id: req.usuarioId,
+            cep,
+            rua,
+            numero,
+            complemento,
+            bairro,
+            cidade,
+            estado,
+            valor_entrega,
+            observacao,
+            metodo_pagamento,
+            itens
+        })
+
+        return res.json(resposta)
+    }
+
+    async cadastrarPedidos(req: Request, res: Response) {
         const {
             cep,
             rua,
@@ -43,7 +77,6 @@ class PedidosControllers {
     }
 
     async visualizarDadosPedidos(req: Request, res: Response) {
-
         const enviarDados = new PedidosServices()
 
         const cliente_id = req.usuarioTipo === "CLIENTE"
@@ -56,7 +89,6 @@ class PedidosControllers {
     }
 
     async visualizarPedidoUnico(req: Request, res: Response) {
-
         const { id } = req.body
 
         const enviarDados = new PedidosServices()
@@ -70,8 +102,21 @@ class PedidosControllers {
         return res.json(resposta)
     }
 
-    async alterarPedidos(req: Request, res: Response) {
+    async gerarWhatsApp(req: Request, res: Response) {
+        const { id } = req.body
 
+        const enviarDados = new PedidosServices()
+
+        const cliente_id = req.usuarioTipo === "CLIENTE"
+            ? req.usuarioId
+            : undefined
+
+        const resposta = await enviarDados.gerarWhatsApp(id, cliente_id)
+
+        return res.json(resposta)
+    }
+
+    async alterarPedidos(req: Request, res: Response) {
         const {
             id,
             status,
@@ -90,7 +135,6 @@ class PedidosControllers {
     }
 
     async apagarPedidos(req: Request, res: Response) {
-
         const { id } = req.body
 
         const enviarDados = new PedidosServices()
