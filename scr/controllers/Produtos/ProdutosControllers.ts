@@ -66,11 +66,7 @@ class ProdutosControllers {
             status
         } = req.body
 
-        if (!req.file) {
-            throw new Error("Imagem não Enviada")
-        }
-
-        const imagem = req.file.filename
+        const imagem = req.file?.filename
 
         const enviarDados = new ProdutosServices()
 

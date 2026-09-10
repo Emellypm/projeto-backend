@@ -1,46 +1,45 @@
 import prismaClient from "../../Prisma/PrismaClient"
 
 interface CadPedidos {
-    cliente_id: string,
-    cep: string,
-    rua: string,
-    numero: string,
-    complemento: string,
-    bairro: string,
-    cidade: string,
-    estado: string,
-    valor_subtotal: number,
-    valor_entrega: number,
-    valor_total: number,
+    cliente_id: string
+    cep: string
+    rua: string
+    numero: string
+    complemento: string
+    bairro: string
+    cidade: string
+    estado: string
+    valor_subtotal: number
+    valor_entrega: number
+    valor_total: number
     observacao: string
 }
 
 interface AltPedidos {
-    id: string,
-    status: "PENDENTE" | "CONFIRMADO" | "EM_PREPARACAO" | "A_CAMINHO" | "ENTREGUE" | "CANCELADO",
+    id: string
+    status: "PENDENTE" | "CONFIRMADO" | "EM_PREPARACAO" | "A_CAMINHO" | "ENTREGUE" | "CANCELADO"
     observacao: string
 }
 
 interface FinalizarPedido {
-    cliente_id: string,
-    cep: string,
-    rua: string,
-    numero: string,
-    complemento?: string,
-    bairro: string,
-    cidade: string,
-    estado: string,
-    valor_entrega: number,
-    observacao?: string,
-    metodo_pagamento: "PIX" | "CARTAO" | "DINHEIRO",
+    cliente_id: string
+    cep: string
+    rua: string
+    numero: string
+    complemento?: string
+    bairro: string
+    cidade: string
+    estado: string
+    valor_entrega: number
+    observacao?: string
+    metodo_pagamento: "PIX" | "CARTAO" | "DINHEIRO"
     itens: {
-        produto_id: string,
+        produto_id: string
         quantidade: number
     }[]
 }
 
 class PedidosServices {
-
     async cadastrarPedidos({
         cliente_id,
         cep,
@@ -56,9 +55,7 @@ class PedidosServices {
         observacao
     }: CadPedidos) {
         const clienteExiste = await prismaClient.clientes.findFirst({
-            where: {
-                id: cliente_id
-            }
+            where: { id: cliente_id }
         })
 
         if (!clienteExiste) {
@@ -67,29 +64,27 @@ class PedidosServices {
 
         await prismaClient.pedidos.create({
             data: {
-                cliente_id: cliente_id,
-                cep: cep,
-                rua: rua,
-                numero: numero,
-                complemento: complemento,
-                bairro: bairro,
-                cidade: cidade,
-                estado: estado,
-                valor_subtotal: valor_subtotal,
-                valor_entrega: valor_entrega,
-                valor_total: valor_total,
-                observacao: observacao
+                cliente_id,
+                cep,
+                rua,
+                numero,
+                complemento,
+                bairro,
+                cidade,
+                estado,
+                valor_subtotal,
+                valor_entrega,
+                valor_total,
+                observacao
             }
         })
 
-        return ({ dados: "Pedido Cadastrado Com Sucesso" })
+        return { dados: "Pedido Cadastrado Com Sucesso" }
     }
 
     async visualizarDadosGeral(cliente_id?: string) {
         const resposta = await prismaClient.pedidos.findMany({
-            where: cliente_id ? {
-                cliente_id: cliente_id
-            } : undefined,
+            where: cliente_id ? { cliente_id } : undefined,
             select: {
                 id: true,
                 cliente_id: true,
@@ -106,6 +101,9 @@ class PedidosServices {
                 valor_total: true,
                 observacao: true,
                 data_criacao: true
+            },
+            orderBy: {
+                data_criacao: "desc"
             }
         })
 
@@ -115,8 +113,8 @@ class PedidosServices {
     async visualizarPedidoUnico(id: string, cliente_id?: string) {
         const resposta = await prismaClient.pedidos.findFirst({
             where: {
-                id: id,
-                ...(cliente_id ? { cliente_id: cliente_id } : {})
+                id,
+                ...(cliente_id ? { cliente_id } : {})
             },
             select: {
                 id: true,
@@ -168,8 +166,8 @@ class PedidosServices {
     async gerarWhatsApp(id: string, cliente_id?: string) {
         const pedido = await prismaClient.pedidos.findFirst({
             where: {
-                id: id,
-                ...(cliente_id ? { cliente_id: cliente_id } : {})
+                id,
+                ...(cliente_id ? { cliente_id } : {})
             },
             select: {
                 id: true,
@@ -221,14 +219,13 @@ class PedidosServices {
         mensagem += `Telefone: ${pedido.cliente.telefone}\n\n`
         mensagem += `🛍️ PEDIDO\n`
 
-        pedido.itens.forEach(item => {
+        pedido.itens.forEach((item) => {
             mensagem += `${item.quantidade}x ${item.produto.nome} - R$ ${Number(item.subtotal).toFixed(2)}\n`
         })
 
         mensagem += `\n💰 Subtotal: R$ ${Number(pedido.valor_subtotal).toFixed(2)}\n`
         mensagem += `🚚 Entrega: R$ ${Number(pedido.valor_entrega).toFixed(2)}\n`
         mensagem += `💵 Total: R$ ${Number(pedido.valor_total).toFixed(2)}\n\n`
-
         mensagem += `📍 ENTREGA\n`
         mensagem += `${pedido.rua}, ${pedido.numero}\n`
 
@@ -253,8 +250,8 @@ class PedidosServices {
         const linkWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensagemCodificada}`
 
         return {
-            linkWhatsApp: linkWhatsApp,
-            mensagem: mensagem
+            linkWhatsApp,
+            mensagem
         }
     }
 
@@ -272,11 +269,8 @@ class PedidosServices {
         metodo_pagamento,
         itens
     }: FinalizarPedido) {
-
         const clienteExiste = await prismaClient.clientes.findFirst({
-            where: {
-                id: cliente_id
-            }
+            where: { id: cliente_id }
         })
 
         if (!clienteExiste) {
@@ -329,7 +323,6 @@ class PedidosServices {
         const valor_total = valor_subtotal + Number(valor_entrega)
 
         const resultado = await prismaClient.$transaction(async (tx) => {
-
             const pedido = await tx.pedidos.create({
                 data: {
                     cliente_id,
@@ -381,7 +374,10 @@ class PedidosServices {
             return pedido
         })
 
-        const whatsapp = await this.gerarWhatsApp(resultado.id, cliente_id)
+        const whatsapp = await this.gerarWhatsApp(
+            resultado.id,
+            cliente_id
+        )
 
         return {
             dados: "Pedido Finalizado Com Sucesso",
@@ -393,9 +389,7 @@ class PedidosServices {
 
     async alterarPedidos({ id, status, observacao }: AltPedidos) {
         const idExiste = await prismaClient.pedidos.findFirst({
-            where: {
-                id: id
-            }
+            where: { id }
         })
 
         if (!idExiste) {
@@ -403,23 +397,19 @@ class PedidosServices {
         }
 
         await prismaClient.pedidos.update({
-            where: {
-                id: id
-            },
+            where: { id },
             data: {
-                status: status,
-                observacao: observacao
+                status,
+                observacao
             }
         })
 
-        return ({ dados: "Pedido Alterado Com Sucesso" })
+        return { dados: "Pedido Alterado Com Sucesso" }
     }
 
     async apagarPedidos(id: string) {
         const idExiste = await prismaClient.pedidos.findFirst({
-            where: {
-                id: id
-            }
+            where: { id }
         })
 
         if (!idExiste) {
@@ -427,12 +417,10 @@ class PedidosServices {
         }
 
         await prismaClient.pedidos.delete({
-            where: {
-                id: id
-            }
+            where: { id }
         })
 
-        return ({ dados: "Pedido Apagado com Sucesso" })
+        return { dados: "Pedido Apagado com Sucesso" }
     }
 }
 

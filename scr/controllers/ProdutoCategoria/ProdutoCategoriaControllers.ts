@@ -4,36 +4,47 @@ import { ProdutoCategoriaServices } from "../../Services/ProdutoCategoria/Produt
 
 class ProdutoCategoriaControllers {
 
+    // CADASTRAR CATEGORIA NO PRODUTO
     async cadastrarProdutoCategoria(req: Request, res: Response) {
 
-        const { produto_id, categoria_id } = req.body
+        const {
+            produto_id,
+            categoria_id
+        } = req.body
 
         const enviarDadosServices = new ProdutoCategoriaServices()
 
-        const resposta = await enviarDadosServices.cadastrarProdutoCategoria({
-            produto_id,
-            categoria_id
-        })
+        const resposta =
+            await enviarDadosServices.cadastrarProdutoCategoria({
+                produto_id,
+                categoria_id
+            })
 
         return res.json(resposta)
     }
 
+
+    // VISUALIZAR TODOS OS VÍNCULOS
     async visualizarDados(req: Request, res: Response) {
 
-        const enviarDados = new ProdutoCategoriaServices()
+        const enviarDadosServices = new ProdutoCategoriaServices()
 
-        const resposta = await enviarDados.visualizarDadosGeral()
+        const resposta =
+            await enviarDadosServices.visualizarDadosGeral()
 
         return res.json(resposta)
     }
 
+
+    // APAGAR CATEGORIA DO PRODUTO
     async apagarProdutoCategoria(req: Request, res: Response) {
 
         const { id } = req.body
 
-        const enviarDados = new ProdutoCategoriaServices()
+        const enviarDadosServices = new ProdutoCategoriaServices()
 
-        const resposta = await enviarDados.apagarProdutoCategoria(id)
+        const resposta =
+            await enviarDadosServices.apagarProdutoCategoria(id)
 
         return res.json(resposta)
     }

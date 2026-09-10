@@ -1,22 +1,38 @@
 import { Router } from 'express'
+
 import multer from 'multer'
+
 import uploadConfig from './config/multer'
+
 import { estaAutenticado } from './Middleware/estaAutenticado'
+
 import { estaAutorizado } from './Middleware/estaAutorizado'
 
 // importação dos controladores
 
 import { UsuariosControllers } from './Controllers/Usuarios/UsuariosControllers'
+
 import { ClientesControllers } from './Controllers/Clientes/ClientesControllers'
+
 import { LojasControllers } from './Controllers/Lojas/LojasControllers'
+
 import { CategoriasControllers } from './Controllers/Categorias/CategoriasControllers'
+
 import { ProdutosControllers } from './Controllers/Produtos/ProdutosControllers'
+
 import { ProdutoCategoriaControllers } from './Controllers/ProdutoCategoria/ProdutoCategoriaControllers'
+
 import { PedidosControllers } from './Controllers/Pedidos/PedidosControllers'
+
 import { ItensPedidoControllers } from './Controllers/ItensPedido/ItensPedidoControllers'
+
 import { PagamentosControllers } from './Controllers/Pagamentos/PagamentosControllers'
+
 import { LoginUsuariosControllers } from './Controllers/LoginUsuarios/LoginUsuariosControllers'
+
 import { LoginClientesControllers } from './Controllers/LoginClientes/LoginClientesControllers'
+
+import { MaisVendidosControllers } from "./Controllers/Pedidos/MaisVendidosControllers"
 
 // instanciar todas as funcionalidades do Router
 
@@ -26,7 +42,7 @@ const upload = multer(uploadConfig.upload('./tmp'))
 
 // criação das rotas de EndPoint
 
-router.post('/cadastrarUsuarios', estaAutorizado("ADMIN"), new UsuariosControllers().cadastrarUsuarios)
+router.post('/cadastrarUsuarios', new UsuariosControllers().cadastrarUsuarios)
 
 router.post('/loginUsuarios', new LoginUsuariosControllers().logarUsuarios)
 
@@ -47,6 +63,8 @@ router.post("/VisualizarCategoriaUnica", new CategoriasControllers().visualizarC
 router.get("/VisualizarDadosGeralPro", new ProdutosControllers().visualizarDadosGeralPro)
 
 router.post("/VisualizarProdutoUnico", new ProdutosControllers().visualizarProdutoUnico)
+
+router.get("/VisualizarMaisVendidos", new MaisVendidosControllers().visualizarMaisVendidos)
 
 // A PARTIR DAQUI PRECISA DE AUTENTICAÇÃO
 
@@ -95,6 +113,10 @@ router.get("/VisualizarDados", estaAutorizado("ADMIN"), new ProdutoCategoriaCont
 router.delete("/ApagarProdutoCategoria", estaAutorizado("ADMIN"), new ProdutoCategoriaControllers().apagarProdutoCategoria)
 
 // ROTAS DE CLIENTE
+
+router.get("/MeuPerfil", estaAutorizado("CLIENTE"), new ClientesControllers().meuPerfil)
+
+router.get("/MeusPedidos", estaAutorizado("CLIENTE"), new PedidosControllers().meusPedidos)
 
 router.get("/VisualizarDadosPedidos", estaAutorizado("CLIENTE", "ADMIN"), new PedidosControllers().visualizarDadosPedidos)
 

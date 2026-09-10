@@ -1,22 +1,22 @@
 import prismaClient from "../../Prisma/PrismaClient"
 
 interface CadProdutos {
-    loja_id: string,
-    nome: string,
-    descricao: string,
-    preco: number,
-    imagem: string,
+    loja_id: string
+    nome: string
+    descricao: string
+    preco: number
+    imagem: string
     estoque: number
 }
 
-interface AltProdutos {
-    id: string,
-    loja_id: string,
-    nome: string,
-    descricao: string,
-    preco: number,
-    imagem: string,
-    estoque: number,
+interface AlterarProdutos {
+    id: string
+    loja_id: string
+    nome: string
+    descricao: string
+    preco: number
+    imagem?: string
+    estoque: number
     status: "ATIVO" | "INATIVO"
 }
 
@@ -41,20 +41,22 @@ class ProdutosServices {
             throw new Error("Loja não Encontrada")
         }
 
-        await prismaClient.produtos.create({
+        const produto = await prismaClient.produtos.create({
             data: {
-                loja_id: loja_id,
-                nome: nome,
-                descricao: descricao,
-                preco: preco,
-                imagem: imagem,
-                estoque: estoque
+                loja_id,
+                nome,
+                descricao,
+                preco,
+                imagem,
+                estoque
             }
         })
 
-        return ({ dados: "Dados Salvos Com Sucesso" })
+        return {
+            dados: "Dados Salvos Com Sucesso",
+            produto_id: produto.id
+        }
     }
-
 
     async visualizarDadosGeral() {
 
@@ -67,13 +69,23 @@ class ProdutosServices {
                 preco: true,
                 imagem: true,
                 estoque: true,
-                status: true
+                status: true,
+                categorias: {
+                    select: {
+                        categoria: {
+                            select: {
+                                id: true,
+                                nome: true,
+                                descricao: true
+                            }
+                        }
+                    }
+                }
             }
         })
 
         return resposta
     }
-
 
     async visualizarProdutoUnico(id: string) {
 
@@ -89,13 +101,23 @@ class ProdutosServices {
                 preco: true,
                 imagem: true,
                 estoque: true,
-                status: true
+                status: true,
+                categorias: {
+                    select: {
+                        categoria: {
+                            select: {
+                                id: true,
+                                nome: true,
+                                descricao: true
+                            }
+                        }
+                    }
+                }
             }
         })
 
         return resposta
     }
-
 
     async alterarProdutos({
         id,
@@ -106,7 +128,7 @@ class ProdutosServices {
         imagem,
         estoque,
         status
-    }: AltProdutos) {
+    }: AlterarProdutos) {
 
         const idExiste = await prismaClient.produtos.findFirst({
             where: {
@@ -118,6 +140,16 @@ class ProdutosServices {
             throw new Error("Registro não Encontrado")
         }
 
+        const lojaExiste = await prismaClient.lojas.findFirst({
+            where: {
+                id: loja_id
+            }
+        })
+
+        if (!lojaExiste) {
+            throw new Error("Loja não Encontrada")
+        }
+
         await prismaClient.produtos.update({
             where: {
                 id: id
@@ -127,15 +159,16 @@ class ProdutosServices {
                 nome: nome,
                 descricao: descricao,
                 preco: preco,
-                imagem: imagem,
                 estoque: estoque,
-                status: status
+                status: status,
+                ...(imagem ? { imagem: imagem } : {})
             }
         })
 
-        return ({ dados: "Dados Alterados Com Sucesso" })
+        return {
+            dados: "Dados Alterados Com Sucesso"
+        }
     }
-
 
     async apagarProdutos(id: string) {
 
@@ -149,15 +182,22 @@ class ProdutosServices {
             throw new Error("Registro não Encontrado")
         }
 
+        await prismaClient.produto_categoria.deleteMany({
+            where: {
+                produto_id: id
+            }
+        })
+
         await prismaClient.produtos.delete({
             where: {
                 id: id
             }
         })
 
-        return ({ dados: "Registro Apagado com Sucesso" })
+        return {
+            dados: "Dados Apagados Com Sucesso"
+        }
     }
-
 }
 
 export { ProdutosServices }
