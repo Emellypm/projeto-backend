@@ -7,6 +7,7 @@ interface CadProdutos {
     preco: number
     imagem: string
     estoque: number
+    sob_encomenda: boolean
 }
 
 interface AlterarProdutos {
@@ -18,19 +19,19 @@ interface AlterarProdutos {
     imagem?: string
     estoque: number
     status: "ATIVO" | "INATIVO"
+    sob_encomenda: boolean
 }
 
 class ProdutosServices {
-
     async cadastrarProdutos({
         loja_id,
         nome,
         descricao,
         preco,
         imagem,
-        estoque
+        estoque,
+        sob_encomenda
     }: CadProdutos) {
-
         const lojaExiste = await prismaClient.lojas.findFirst({
             where: {
                 id: loja_id
@@ -48,7 +49,8 @@ class ProdutosServices {
                 descricao,
                 preco,
                 imagem,
-                estoque
+                estoque,
+                sob_encomenda
             }
         })
 
@@ -59,7 +61,6 @@ class ProdutosServices {
     }
 
     async visualizarDadosGeral() {
-
         const resposta = await prismaClient.produtos.findMany({
             select: {
                 id: true,
@@ -69,6 +70,7 @@ class ProdutosServices {
                 preco: true,
                 imagem: true,
                 estoque: true,
+                sob_encomenda: true,
                 status: true,
                 categorias: {
                     select: {
@@ -83,12 +85,11 @@ class ProdutosServices {
                 }
             }
         })
-
+        console.log(resposta)
         return resposta
     }
 
     async visualizarProdutoUnico(id: string) {
-
         const resposta = await prismaClient.produtos.findFirst({
             where: {
                 id: id
@@ -101,6 +102,7 @@ class ProdutosServices {
                 preco: true,
                 imagem: true,
                 estoque: true,
+                sob_encomenda: true,
                 status: true,
                 categorias: {
                     select: {
@@ -127,9 +129,9 @@ class ProdutosServices {
         preco,
         imagem,
         estoque,
-        status
+        status,
+        sob_encomenda
     }: AlterarProdutos) {
-
         const idExiste = await prismaClient.produtos.findFirst({
             where: {
                 id: id
@@ -161,6 +163,7 @@ class ProdutosServices {
                 preco: preco,
                 estoque: estoque,
                 status: status,
+                sob_encomenda: sob_encomenda,
                 ...(imagem ? { imagem: imagem } : {})
             }
         })
@@ -171,7 +174,6 @@ class ProdutosServices {
     }
 
     async apagarProdutos(id: string) {
-
         const idExiste = await prismaClient.produtos.findFirst({
             where: {
                 id: id

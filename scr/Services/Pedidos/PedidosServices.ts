@@ -214,7 +214,7 @@ class PedidosServices {
             throw new Error("Pedido não Encontrado")
         }
 
-        let mensagem = `🍰 NOVO PEDIDO - DINO DOCES\n\n`
+        let mensagem = `🍰 NOVO PEDIDO - DINO'S DOCES\n\n`
         mensagem += `Cliente: ${pedido.cliente.nome}\n`
         mensagem += `Telefone: ${pedido.cliente.telefone}\n\n`
         mensagem += `🛍️ PEDIDO\n`
@@ -423,5 +423,6 @@ class PedidosServices {
         return { dados: "Pedido Apagado com Sucesso" }
     }
 }
+
 
 export { PedidosServices }

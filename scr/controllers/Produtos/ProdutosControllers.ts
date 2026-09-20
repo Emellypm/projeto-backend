@@ -3,15 +3,14 @@ import { Request, Response } from "express"
 import { ProdutosServices } from "../../Services/Produtos/ProdutosServices"
 
 class ProdutosControllers {
-
     async cadastrarProdutos(req: Request, res: Response) {
-
         const {
             loja_id,
             nome,
             descricao,
             preco,
-            estoque
+            estoque,
+            sob_encomenda
         } = req.body
 
         if (!req.file) {
@@ -19,7 +18,6 @@ class ProdutosControllers {
         }
 
         const imagem = req.file.filename
-
         const enviarDadosServices = new ProdutosServices()
 
         const resposta = await enviarDadosServices.cadastrarProdutos({
@@ -28,34 +26,27 @@ class ProdutosControllers {
             descricao,
             preco: Number(preco),
             imagem,
-            estoque: Number(estoque)
+            estoque: Number(estoque),
+            sob_encomenda: sob_encomenda === "true"
         })
 
         return res.json(resposta)
     }
 
     async visualizarDadosGeralPro(req: Request, res: Response) {
-
         const enviarDados = new ProdutosServices()
-
         const resposta = await enviarDados.visualizarDadosGeral()
-
         return res.json(resposta)
     }
 
     async visualizarProdutoUnico(req: Request, res: Response) {
-
         const { id } = req.body
-
         const enviarDados = new ProdutosServices()
-
         const resposta = await enviarDados.visualizarProdutoUnico(id)
-
         return res.json(resposta)
     }
 
     async alterarProdutos(req: Request, res: Response) {
-
         const {
             id,
             loja_id,
@@ -63,11 +54,11 @@ class ProdutosControllers {
             descricao,
             preco,
             estoque,
-            status
+            status,
+            sob_encomenda
         } = req.body
 
         const imagem = req.file?.filename
-
         const enviarDados = new ProdutosServices()
 
         const resposta = await enviarDados.alterarProdutos({
@@ -78,20 +69,17 @@ class ProdutosControllers {
             preco: Number(preco),
             imagem,
             estoque: Number(estoque),
-            status
+            status,
+            sob_encomenda: sob_encomenda === "true"
         })
 
         return res.json(resposta)
     }
 
     async apagarProdutos(req: Request, res: Response) {
-
         const { id } = req.body
-
         const enviarDados = new ProdutosServices()
-
         const resposta = await enviarDados.apagarProdutos(id)
-
         return res.json(resposta)
     }
 }
