@@ -36,6 +36,7 @@ import { MaisVendidosControllers } from "./Controllers/Pedidos/MaisVendidosContr
 
 import { WhatsAppControllers } from './Controllers/WhatsApp/WhatsAppControllers'
 
+
 // instanciar todas as funcionalidades do Router
 
 const router = Router()
@@ -67,6 +68,11 @@ router.get("/VisualizarDadosGeralPro", new ProdutosControllers().visualizarDados
 router.post("/VisualizarProdutoUnico", new ProdutosControllers().visualizarProdutoUnico)
 
 router.get("/VisualizarMaisVendidos", new MaisVendidosControllers().visualizarMaisVendidos)
+
+
+router.get("/WebhookWhatsApp", new WhatsAppControllers().verificarWebhook)
+
+router.post("/WebhookWhatsApp", new WhatsAppControllers().receberWebhook)
 
 // A PARTIR DAQUI PRECISA DE AUTENTICAÇÃO
 

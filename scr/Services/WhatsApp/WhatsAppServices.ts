@@ -1,12 +1,9 @@
-import { text } from "stream/consumers"
-
 interface EnviarMensagem {
     telefone: string
-    mensagem: string
 }
 
 class WhatsAppServices {
-    async enviarMensagem({telefone, mensagem}: EnviarMensagem) {
+    async enviarMensagem({ telefone }: EnviarMensagem) {
         const token = process.env.WHATSAPP_TOKEN
         const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID
         const apiVersion = process.env.WHATSAPP_API_VERSION
@@ -14,9 +11,10 @@ class WhatsAppServices {
         if (!token || !phoneNumberId || !apiVersion) {
             throw new Error("Configurações do WhatsApp não encontradas")
         }
+
         const resposta = await fetch(
-             `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
-             {
+            `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
+            {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -25,13 +23,17 @@ class WhatsAppServices {
                 body: JSON.stringify({
                     messaging_product: "whatsapp",
                     to: telefone,
-                    type: "text",
-                    text: {
-                        body: mensagem
+                    type: "template",
+                    template: {
+                        name: "hello_world",
+                        language: {
+                            code: "en_US"
+                        }
                     }
                 })
-             }
+            }
         )
+
         const dados = await resposta.json()
 
         if (!resposta.ok) {
@@ -40,7 +42,9 @@ class WhatsAppServices {
                 dados?.error?.message || "Não foi possível enviar a mensagem"
             )
         }
+
         return dados
     }
 }
+
 export default new WhatsAppServices()
