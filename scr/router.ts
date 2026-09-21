@@ -34,6 +34,8 @@ import { LoginClientesControllers } from './Controllers/LoginClientes/LoginClien
 
 import { MaisVendidosControllers } from "./Controllers/Pedidos/MaisVendidosControllers"
 
+import { WhatsAppControllers } from './Controllers/WhatsApp/WhatsAppControllers'
+
 // instanciar todas as funcionalidades do Router
 
 const router = Router()
@@ -111,6 +113,8 @@ router.post("/CadastrarProdutoCategoria", estaAutorizado("ADMIN"), new ProdutoCa
 router.get("/VisualizarDados", estaAutorizado("ADMIN"), new ProdutoCategoriaControllers().visualizarDados)
 
 router.delete("/ApagarProdutoCategoria", estaAutorizado("ADMIN"), new ProdutoCategoriaControllers().apagarProdutoCategoria)
+
+router.post("/TestarWhatsApp", estaAutorizado("ADMIN"), new WhatsAppControllers().testarWhatsApp)
 
 // ROTAS DE CLIENTE
 
