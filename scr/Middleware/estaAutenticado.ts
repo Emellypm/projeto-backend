@@ -14,7 +14,7 @@ export function estaAutenticado(
     const autoToken = req.headers.authorization
 
     if (!autoToken) {
-        return res.json({ dados: 'Token Inexistente' })
+    return res.status(401).json({ dados: 'Token Inexistente' })
     }
 
     const [, token] = autoToken.split(' ')
@@ -31,6 +31,6 @@ export function estaAutenticado(
         return next()
 
     } catch (err) {
-        return res.json({ dados: 'Token Inválido' })
+        return res.status(401).json({ dados: 'Token Inválido' })
     }
 }

@@ -1,145 +1,138 @@
+
 import prismaClient from "../../Prisma/PrismaClient"
 
-interface CadPagamentos {
-    pedido_id: string,
-    metodo: "PIX" | "CARTAO" | "DINHEIRO"
-}
+type StatusPagamento = "PENDENTE" | "APROVADO" | "CANCELADO"
+type MetodoPagamento = "PIX" | "CARTAO" | "DINHEIRO"
 
 interface AltPagamentos {
-    id: string,
-    status: "PENDENTE" | "APROVADO" | "RECUSADO" | "CANCELADO"
+    id: string
+    status: StatusPagamento
+    metodo?: MetodoPagamento | null
+    valor?: number
 }
 
 class PagamentosServices {
-
-    async cadastrarPagamentos({ pedido_id, metodo }: CadPagamentos, cliente_id?: string) {
-        const pedidoExiste = await prismaClient.pedidos.findFirst({
-            where: {
-                id: pedido_id,
-                ...(cliente_id ? {
-                    cliente_id: cliente_id
-                } : {})
-            }
-        })
-
-        if (!pedidoExiste) {
-            throw new Error("Pedido não Encontrado")
-        }
-
-        const pagamentoExiste = await prismaClient.pagamentos.findFirst({
-            where: {
-                pedido_id: pedido_id
-            }
-        })
-
-        if (pagamentoExiste) {
-            throw new Error("Esse Pedido já possui um Pagamento")
-        }
-
-        const valor = Number(pedidoExiste.valor_total)
-
-        await prismaClient.pagamentos.create({
-            data: {
-                pedido_id: pedido_id,
-                metodo: metodo,
-                valor: valor
-            }
-        })
-
-        return ({ dados: "Pagamento Cadastrado Com Sucesso" })
-    }
-
     async visualizarDadosGeral(cliente_id?: string) {
-        const resposta = await prismaClient.pagamentos.findMany({
-            where: cliente_id ? {
+        return await prismaClient.pagamentos.findMany({
+            where: cliente_id
+                ? { pedido: { cliente_id } }
+                : undefined,
+            include: {
                 pedido: {
-                    cliente_id: cliente_id
+                    include: {
+                        cliente: {
+                            select: {
+                                nome: true,
+                                telefone: true
+                            }
+                        },
+                        itens: {
+                            include: {
+                                produto: {
+                                    select: {
+                                        nome: true
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
-            } : undefined,
-            select: {
-                id: true,
-                pedido_id: true,
-                metodo: true,
-                status: true,
-                valor: true,
-                pago_em: true
+            },
+            orderBy: {
+                data_criacao: "desc"
             }
         })
-
-        return resposta
     }
 
     async visualizarPagamentoUnico(id: string, cliente_id?: string) {
-        const resposta = await prismaClient.pagamentos.findFirst({
+        return await prismaClient.pagamentos.findFirst({
             where: {
-                id: id,
-                ...(cliente_id ? {
-                    pedido: {
-                        cliente_id: cliente_id
-                    }
-                } : {})
+                id,
+                ...(cliente_id
+                    ? { pedido: { cliente_id } }
+                    : {})
             },
-            select: {
-                id: true,
-                pedido_id: true,
-                metodo: true,
-                status: true,
-                valor: true,
-                pago_em: true
+            include: {
+                pedido: {
+                    include: {
+                        cliente: {
+                            select: {
+                                nome: true,
+                                telefone: true
+                            }
+                        },
+                        itens: {
+                            include: {
+                                produto: {
+                                    select: {
+                                        nome: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         })
-
-        return resposta
     }
 
     async alterarPagamentos({
         id,
-        status
+        status,
+        metodo,
+        valor
     }: AltPagamentos) {
-
-        const idExiste = await prismaClient.pagamentos.findFirst({
-            where: {
-                id: id
-            }
+        const pagamento = await prismaClient.pagamentos.findUnique({
+            where: { id }
         })
 
-        if (!idExiste) {
-            throw new Error("Registro não Encontrado")
+        if (!pagamento) {
+            throw new Error("Pagamento não encontrado")
+        }
+
+        const metodoFinal = metodo === undefined
+            ? pagamento.metodo
+            : metodo
+
+        if (status === "APROVADO" && !metodoFinal) {
+            throw new Error("Informe a forma de pagamento antes de aprovar")
+        }
+
+        if (valor !== undefined && (!Number.isFinite(valor) || valor < 0)) {
+            throw new Error("O valor do pagamento é inválido")
+        }
+
+        if (
+            pagamento.status === "APROVADO" &&
+            status === "PENDENTE"
+        ) {
+            throw new Error("Um pagamento aprovado não pode voltar para pendente")
         }
 
         await prismaClient.pagamentos.update({
-            where: {
-                id: id
-            },
+            where: { id },
             data: {
-                status: status,
-                pago_em: status === "APROVADO" ? new Date() : null
+                status,
+                metodo: metodoFinal,
+                ...(valor !== undefined ? { valor } : {}),
+                pago_em: status === "APROVADO"
+                    ? pagamento.pago_em || new Date()
+                    : pagamento.pago_em
             }
         })
 
-        return ({ dados: "Pagamento Alterado Com Sucesso" })
-    }
-
-    async apagarPagamentos(id: string) {
-        const idExiste = await prismaClient.pagamentos.findFirst({
-            where: {
-                id: id
-            }
-        })
-
-        if (!idExiste) {
-            throw new Error("Registro não Encontrado")
+        return {
+            dados: "Pagamento atualizado com sucesso"
         }
-
-        await prismaClient.pagamentos.delete({
-            where: {
-                id: id
-            }
-        })
-
-        return ({ dados: "Pagamento Apagado com Sucesso" })
     }
 
+    async cadastrarPagamentos() {
+        throw new Error("O pagamento é criado automaticamente junto com o pedido")
+    }
+
+    async apagarPagamentos() {
+        throw new Error("Os registros financeiros não podem ser excluídos")
+    }
 }
 
 export { PagamentosServices }

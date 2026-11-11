@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node-dev scr/server.ts"
+    "dev": "ts-node-dev --files scr/server.ts"
   },
   "keywords": [],
   "author": "",

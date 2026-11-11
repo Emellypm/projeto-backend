@@ -1,137 +1,57 @@
+
 import prismaClient from "../../Prisma/PrismaClient"
 
-interface CadPedidos {
-    cliente_id: string
-    cep: string
-    rua: string
-    numero: string
-    complemento: string
-    bairro: string
-    cidade: string
-    estado: string
-    valor_subtotal: number
-    valor_entrega: number
-    valor_total: number
-    observacao: string
-}
-
-interface AltPedidos {
-    id: string
-    status: "PENDENTE" | "CONFIRMADO" | "EM_PREPARACAO" | "A_CAMINHO" | "ENTREGUE" | "CANCELADO"
-    observacao: string
-}
+type StatusPedido = "RECEBIDO" | "CANCELADO"
 
 interface FinalizarPedido {
     cliente_id: string
-    cep: string
-    rua: string
-    numero: string
-    complemento?: string
-    bairro: string
-    cidade: string
-    estado: string
-    valor_entrega: number
     observacao?: string
-    metodo_pagamento: "PIX" | "CARTAO" | "DINHEIRO"
     itens: {
         produto_id: string
         quantidade: number
     }[]
 }
 
+interface AltPedidos {
+    id: string
+    status: StatusPedido
+    observacao?: string
+}
+
 class PedidosServices {
-    async cadastrarPedidos({
-        cliente_id,
-        cep,
-        rua,
-        numero,
-        complemento,
-        bairro,
-        cidade,
-        estado,
-        valor_subtotal,
-        valor_entrega,
-        valor_total,
-        observacao
-    }: CadPedidos) {
-        const clienteExiste = await prismaClient.clientes.findFirst({
-            where: { id: cliente_id }
-        })
-
-        if (!clienteExiste) {
-            throw new Error("Cliente não Encontrado")
-        }
-
-        await prismaClient.pedidos.create({
-            data: {
-                cliente_id,
-                cep,
-                rua,
-                numero,
-                complemento,
-                bairro,
-                cidade,
-                estado,
-                valor_subtotal,
-                valor_entrega,
-                valor_total,
-                observacao
-            }
-        })
-
-        return { dados: "Pedido Cadastrado Com Sucesso" }
-    }
-
     async visualizarDadosGeral(cliente_id?: string) {
-        const resposta = await prismaClient.pedidos.findMany({
+        return await prismaClient.pedidos.findMany({
             where: cliente_id ? { cliente_id } : undefined,
-            select: {
-                id: true,
-                cliente_id: true,
-                cep: true,
-                rua: true,
-                numero: true,
-                complemento: true,
-                bairro: true,
-                cidade: true,
-                estado: true,
-                status: true,
-                valor_subtotal: true,
-                valor_entrega: true,
-                valor_total: true,
-                observacao: true,
-                data_criacao: true
+            include: {
+                cliente: {
+                    select: {
+                        nome: true,
+                        telefone: true
+                    }
+                },
+                pagamento: {
+                    select: {
+                        id: true,
+                        metodo: true,
+                        status: true,
+                        valor: true,
+                        pago_em: true
+                    }
+                }
             },
             orderBy: {
                 data_criacao: "desc"
             }
         })
-
-        return resposta
     }
 
     async visualizarPedidoUnico(id: string, cliente_id?: string) {
-        const resposta = await prismaClient.pedidos.findFirst({
+        return await prismaClient.pedidos.findFirst({
             where: {
                 id,
                 ...(cliente_id ? { cliente_id } : {})
             },
-            select: {
-                id: true,
-                cliente_id: true,
-                cep: true,
-                rua: true,
-                numero: true,
-                complemento: true,
-                bairro: true,
-                cidade: true,
-                estado: true,
-                status: true,
-                valor_subtotal: true,
-                valor_entrega: true,
-                valor_total: true,
-                observacao: true,
-                data_criacao: true,
+            include: {
                 cliente: {
                     select: {
                         nome: true,
@@ -139,10 +59,7 @@ class PedidosServices {
                     }
                 },
                 itens: {
-                    select: {
-                        quantidade: true,
-                        preco_unitario: true,
-                        subtotal: true,
+                    include: {
                         produto: {
                             select: {
                                 nome: true
@@ -152,15 +69,15 @@ class PedidosServices {
                 },
                 pagamento: {
                     select: {
+                        id: true,
                         metodo: true,
                         status: true,
-                        valor: true
+                        valor: true,
+                        pago_em: true
                     }
                 }
             }
         })
-
-        return resposta
     }
 
     async gerarWhatsApp(id: string, cliente_id?: string) {
@@ -169,20 +86,7 @@ class PedidosServices {
                 id,
                 ...(cliente_id ? { cliente_id } : {})
             },
-            select: {
-                id: true,
-                cliente_id: true,
-                cep: true,
-                rua: true,
-                numero: true,
-                complemento: true,
-                bairro: true,
-                cidade: true,
-                estado: true,
-                valor_subtotal: true,
-                valor_entrega: true,
-                valor_total: true,
-                observacao: true,
+            include: {
                 cliente: {
                     select: {
                         nome: true,
@@ -190,59 +94,36 @@ class PedidosServices {
                     }
                 },
                 itens: {
-                    select: {
-                        quantidade: true,
-                        preco_unitario: true,
-                        subtotal: true,
+                    include: {
                         produto: {
                             select: {
                                 nome: true
                             }
                         }
                     }
-                },
-                pagamento: {
-                    select: {
-                        metodo: true,
-                        valor: true
-                    }
                 }
             }
         })
 
         if (!pedido) {
-            throw new Error("Pedido não Encontrado")
+            throw new Error("Pedido não encontrado")
         }
 
         let mensagem = `🍰 NOVO PEDIDO - DINO'S DOCES\n\n`
         mensagem += `Cliente: ${pedido.cliente.nome}\n`
         mensagem += `Telefone: ${pedido.cliente.telefone}\n\n`
-        mensagem += `🛍️ PEDIDO\n`
+        mensagem += `🛍️ PRODUTOS\n`
 
-        pedido.itens.forEach((item) => {
+        pedido.itens.forEach(item => {
             mensagem += `${item.quantidade}x ${item.produto.nome} - R$ ${Number(item.subtotal).toFixed(2)}\n`
         })
 
         mensagem += `\n💰 Subtotal: R$ ${Number(pedido.valor_subtotal).toFixed(2)}\n`
-        mensagem += `🚚 Entrega: R$ ${Number(pedido.valor_entrega).toFixed(2)}\n`
-        mensagem += `💵 Total: R$ ${Number(pedido.valor_total).toFixed(2)}\n\n`
-        mensagem += `📍 ENTREGA\n`
-        mensagem += `${pedido.rua}, ${pedido.numero}\n`
-
-        if (pedido.complemento) {
-            mensagem += `${pedido.complemento}\n`
-        }
-
-        mensagem += `${pedido.bairro} - ${pedido.cidade}/${pedido.estado}\n`
-        mensagem += `CEP: ${pedido.cep}\n`
+        mensagem += `💵 Total dos produtos: R$ ${Number(pedido.valor_total).toFixed(2)}\n`
+        mensagem += `📦 Entrega e forma de pagamento: a combinar pelo WhatsApp.\n`
 
         if (pedido.observacao) {
-            mensagem += `\n📝 Observação:\n`
-            mensagem += `${pedido.observacao}\n`
-        }
-
-        if (pedido.pagamento) {
-            mensagem += `\n💳 Pagamento: ${pedido.pagamento.metodo}\n`
+            mensagem += `\n📝 Observação:\n${pedido.observacao}\n`
         }
 
         const numeroWhatsApp = "5514991446325"
@@ -257,16 +138,7 @@ class PedidosServices {
 
     async finalizarPedido({
         cliente_id,
-        cep,
-        rua,
-        numero,
-        complemento,
-        bairro,
-        cidade,
-        estado,
-        valor_entrega,
         observacao,
-        metodo_pagamento,
         itens
     }: FinalizarPedido) {
         const clienteExiste = await prismaClient.clientes.findFirst({
@@ -274,69 +146,56 @@ class PedidosServices {
         })
 
         if (!clienteExiste) {
-            throw new Error("Cliente não Encontrado")
+            throw new Error("Cliente não encontrado")
         }
 
-        if (!itens || itens.length === 0) {
-            throw new Error("O pedido precisa ter pelo menos um item")
+        if (!Array.isArray(itens) || itens.length === 0) {
+            throw new Error("O pedido precisa ter pelo menos um produto")
         }
 
-        if (valor_entrega < 0) {
-            throw new Error("O valor da entrega não pode ser negativo")
-        }
+        const resultado = await prismaClient.$transaction(async tx => {
+            const produtos = []
 
-        const produtos = []
-
-        for (const item of itens) {
-            if (item.quantidade <= 0) {
-                throw new Error("A quantidade deve ser maior que zero")
-            }
-
-            const produto = await prismaClient.produtos.findFirst({
-                where: {
-                    id: item.produto_id,
-                    status: "ATIVO"
+            for (const item of itens) {
+                if (!Number.isInteger(item.quantidade) || item.quantidade <= 0) {
+                    throw new Error("A quantidade deve ser um número inteiro maior que zero")
                 }
-            })
 
-            if (!produto) {
-                throw new Error(`Produto não encontrado: ${item.produto_id}`)
+                const produto = await tx.produtos.findFirst({
+                    where: {
+                        id: item.produto_id,
+                        status: "ATIVO"
+                    }
+                })
+
+                if (!produto) {
+                    throw new Error(`Produto não encontrado: ${item.produto_id}`)
+                }
+
+                if (!produto.sob_encomenda && item.quantidade > produto.estoque) {
+                    throw new Error(`Estoque insuficiente para o produto: ${produto.nome}`)
+                }
+
+                produtos.push({
+                    produto_id: produto.id,
+                    quantidade: item.quantidade,
+                    preco_unitario: Number(produto.preco),
+                    subtotal: Number(produto.preco) * item.quantidade
+                })
             }
 
-            if (item.quantidade > produto.estoque) {
-                throw new Error(`Estoque insuficiente para o produto: ${produto.nome}`)
-            }
+            const valor_subtotal = produtos.reduce(
+                (total, item) => total + item.subtotal,
+                0
+            )
 
-            produtos.push({
-                produto_id: produto.id,
-                quantidade: item.quantidade,
-                preco_unitario: Number(produto.preco),
-                subtotal: Number(produto.preco) * item.quantidade
-            })
-        }
-
-        const valor_subtotal = produtos.reduce(
-            (total, item) => total + item.subtotal,
-            0
-        )
-
-        const valor_total = valor_subtotal + Number(valor_entrega)
-
-        const resultado = await prismaClient.$transaction(async (tx) => {
             const pedido = await tx.pedidos.create({
                 data: {
                     cliente_id,
-                    cep,
-                    rua,
-                    numero,
-                    complemento,
-                    bairro,
-                    cidade,
-                    estado,
+                    status: "RECEBIDO",
                     valor_subtotal,
-                    valor_entrega,
-                    valor_total,
-                    observacao
+                    valor_total: valor_subtotal,
+                    observacao: observacao?.trim() || null
                 }
             })
 
@@ -350,24 +209,14 @@ class PedidosServices {
                         subtotal: item.subtotal
                     }
                 })
-
-                await tx.produtos.update({
-                    where: {
-                        id: item.produto_id
-                    },
-                    data: {
-                        estoque: {
-                            decrement: item.quantidade
-                        }
-                    }
-                })
             }
 
             await tx.pagamentos.create({
                 data: {
                     pedido_id: pedido.id,
-                    metodo: metodo_pagamento,
-                    valor: valor_total
+                    metodo: null,
+                    status: "PENDENTE",
+                    valor: valor_subtotal
                 }
             })
 
@@ -380,49 +229,68 @@ class PedidosServices {
         )
 
         return {
-            dados: "Pedido Finalizado Com Sucesso",
+            dados: "Pedido recebido com sucesso",
             pedido_id: resultado.id,
             linkWhatsApp: whatsapp.linkWhatsApp,
             mensagem: whatsapp.mensagem
         }
     }
 
-    async alterarPedidos({ id, status, observacao }: AltPedidos) {
-        const idExiste = await prismaClient.pedidos.findFirst({
+    async alterarPedidos({
+        id,
+        status,
+        observacao
+    }: AltPedidos) {
+        const pedido = await prismaClient.pedidos.findFirst({
             where: { id }
         })
 
-        if (!idExiste) {
-            throw new Error("Registro não Encontrado")
+        if (!pedido) {
+            throw new Error("Pedido não encontrado")
         }
 
-        await prismaClient.pedidos.update({
-            where: { id },
-            data: {
-                status,
-                observacao
+        if (pedido.status === "CANCELADO" && status !== "CANCELADO") {
+            throw new Error("Um pedido cancelado não pode ser reativado")
+        }
+
+        await prismaClient.$transaction(async tx => {
+            await tx.pedidos.update({
+                where: { id },
+                data: {
+                    status,
+                    observacao
+                }
+            })
+
+            if (status === "CANCELADO") {
+                await tx.pagamentos.updateMany({
+                    where: {
+                        pedido_id: id,
+                        status: "PENDENTE"
+                    },
+                    data: {
+                        status: "CANCELADO"
+                    }
+                })
             }
         })
 
-        return { dados: "Pedido Alterado Com Sucesso" }
+        return {
+            dados: "Pedido atualizado com sucesso"
+        }
     }
 
     async apagarPedidos(id: string) {
-        const idExiste = await prismaClient.pedidos.findFirst({
+        const pedido = await prismaClient.pedidos.findFirst({
             where: { id }
         })
 
-        if (!idExiste) {
-            throw new Error("Registro não Encontrado")
+        if (!pedido) {
+            throw new Error("Pedido não encontrado")
         }
 
-        await prismaClient.pedidos.delete({
-            where: { id }
-        })
-
-        return { dados: "Pedido Apagado com Sucesso" }
+        throw new Error("Para preservar o histórico financeiro, cancele o pedido em vez de excluí-lo")
     }
 }
-
 
 export { PedidosServices }

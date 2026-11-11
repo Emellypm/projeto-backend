@@ -1,7 +1,7 @@
+
 import prismaClient from "../../Prisma/PrismaClient"
 
 interface CadProdutos {
-    loja_id: string
     nome: string
     descricao: string
     preco: number
@@ -12,7 +12,6 @@ interface CadProdutos {
 
 interface AlterarProdutos {
     id: string
-    loja_id: string
     nome: string
     descricao: string
     preco: number
@@ -24,7 +23,6 @@ interface AlterarProdutos {
 
 class ProdutosServices {
     async cadastrarProdutos({
-        loja_id,
         nome,
         descricao,
         preco,
@@ -32,19 +30,8 @@ class ProdutosServices {
         estoque,
         sob_encomenda
     }: CadProdutos) {
-        const lojaExiste = await prismaClient.lojas.findFirst({
-            where: {
-                id: loja_id
-            }
-        })
-
-        if (!lojaExiste) {
-            throw new Error("Loja não Encontrada")
-        }
-
         const produto = await prismaClient.produtos.create({
             data: {
-                loja_id,
                 nome,
                 descricao,
                 preco,
@@ -64,7 +51,6 @@ class ProdutosServices {
         const resposta = await prismaClient.produtos.findMany({
             select: {
                 id: true,
-                loja_id: true,
                 nome: true,
                 descricao: true,
                 preco: true,
@@ -85,18 +71,15 @@ class ProdutosServices {
                 }
             }
         })
-        console.log(resposta)
+
         return resposta
     }
 
     async visualizarProdutoUnico(id: string) {
         const resposta = await prismaClient.produtos.findFirst({
-            where: {
-                id: id
-            },
+            where: { id },
             select: {
                 id: true,
-                loja_id: true,
                 nome: true,
                 descricao: true,
                 preco: true,
@@ -123,7 +106,6 @@ class ProdutosServices {
 
     async alterarProdutos({
         id,
-        loja_id,
         nome,
         descricao,
         preco,
@@ -133,38 +115,23 @@ class ProdutosServices {
         sob_encomenda
     }: AlterarProdutos) {
         const idExiste = await prismaClient.produtos.findFirst({
-            where: {
-                id: id
-            }
+            where: { id }
         })
 
         if (!idExiste) {
             throw new Error("Registro não Encontrado")
         }
 
-        const lojaExiste = await prismaClient.lojas.findFirst({
-            where: {
-                id: loja_id
-            }
-        })
-
-        if (!lojaExiste) {
-            throw new Error("Loja não Encontrada")
-        }
-
         await prismaClient.produtos.update({
-            where: {
-                id: id
-            },
+            where: { id },
             data: {
-                loja_id: loja_id,
-                nome: nome,
-                descricao: descricao,
-                preco: preco,
-                estoque: estoque,
-                status: status,
-                sob_encomenda: sob_encomenda,
-                ...(imagem ? { imagem: imagem } : {})
+                nome,
+                descricao,
+                preco,
+                estoque,
+                status,
+                sob_encomenda,
+                ...(imagem ? { imagem } : {})
             }
         })
 
@@ -175,9 +142,7 @@ class ProdutosServices {
 
     async apagarProdutos(id: string) {
         const idExiste = await prismaClient.produtos.findFirst({
-            where: {
-                id: id
-            }
+            where: { id }
         })
 
         if (!idExiste) {
@@ -185,15 +150,11 @@ class ProdutosServices {
         }
 
         await prismaClient.produto_categoria.deleteMany({
-            where: {
-                produto_id: id
-            }
+            where: { produto_id: id }
         })
 
         await prismaClient.produtos.delete({
-            where: {
-                id: id
-            }
+            where: { id }
         })
 
         return {

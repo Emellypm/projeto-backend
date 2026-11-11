@@ -14,7 +14,7 @@ import { UsuariosControllers } from './Controllers/Usuarios/UsuariosControllers'
 
 import { ClientesControllers } from './Controllers/Clientes/ClientesControllers'
 
-import { LojasControllers } from './Controllers/Lojas/LojasControllers'
+import { ConfiguracoesLojaControllers } from './Controllers/ConfiguracoesLoja/ConfiguracoesLojaControllers'
 
 import { CategoriasControllers } from './Controllers/Categorias/CategoriasControllers'
 
@@ -37,6 +37,7 @@ import { MaisVendidosControllers } from "./Controllers/Pedidos/MaisVendidosContr
 import { WhatsAppControllers } from './Controllers/WhatsApp/WhatsAppControllers'
 
 
+
 // instanciar todas as funcionalidades do Router
 
 const router = Router()
@@ -55,9 +56,7 @@ router.post('/loginClientes', new LoginClientesControllers().logarClientes)
 
 // ROTAS PÚBLICAS DE CONSULTA
 
-router.get("/VisualizarDadosGeralLoja", new LojasControllers().visualizarDadosGeralLojas)
-
-router.post("/VisualizarLojaUnica", new LojasControllers().visualizarLojaUnica)
+router.get("/VisualizarDadosGeralLoja", new ConfiguracoesLojaControllers().visualizarConfiguracoes)
 
 router.get("/VisualizarDadosGeralCat", new CategoriasControllers().visualizarDadosGeralCat)
 
@@ -96,11 +95,7 @@ router.put('/alterarClientes', estaAutorizado("ADMIN"), new ClientesControllers(
 
 router.delete('/apagarClientes', estaAutorizado("ADMIN"), new ClientesControllers().apagarClientes)
 
-router.post("/CadastrarLojas", estaAutorizado("ADMIN"), new LojasControllers().cadastrarLojas)
-
-router.put("/AlterarLojas", estaAutorizado("ADMIN"), new LojasControllers().alterarLojas)
-
-router.delete("/ApagarLojas", estaAutorizado("ADMIN"), new LojasControllers().apagarLojas)
+router.put("/SalvarConfiguracoesLoja", estaAutorizado("ADMIN"),new ConfiguracoesLojaControllers().salvarConfiguracoes)
 
 router.post("/CadastrarCategorias", estaAutorizado("ADMIN"), new CategoriasControllers().cadastrarCategorias)
 
@@ -162,6 +157,5 @@ router.post("/VisualizarPagamentoUnico", estaAutorizado("CLIENTE", "ADMIN"), new
 
 router.put("/AlterarPagamentos", estaAutorizado("ADMIN"), new PagamentosControllers().alterarPagamentos)
 
-router.delete("/ApagarPagamentos", estaAutorizado("ADMIN"), new PagamentosControllers().apagarPagamentos)
 
 export default router

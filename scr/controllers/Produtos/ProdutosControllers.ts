@@ -1,11 +1,10 @@
-import { Request, Response } from "express"
 
+import { Request, Response } from "express"
 import { ProdutosServices } from "../../Services/Produtos/ProdutosServices"
 
 class ProdutosControllers {
     async cadastrarProdutos(req: Request, res: Response) {
         const {
-            loja_id,
             nome,
             descricao,
             preco,
@@ -21,7 +20,6 @@ class ProdutosControllers {
         const enviarDadosServices = new ProdutosServices()
 
         const resposta = await enviarDadosServices.cadastrarProdutos({
-            loja_id,
             nome,
             descricao,
             preco: Number(preco),
@@ -49,7 +47,6 @@ class ProdutosControllers {
     async alterarProdutos(req: Request, res: Response) {
         const {
             id,
-            loja_id,
             nome,
             descricao,
             preco,
@@ -63,7 +60,6 @@ class ProdutosControllers {
 
         const resposta = await enviarDados.alterarProdutos({
             id,
-            loja_id,
             nome,
             descricao,
             preco: Number(preco),

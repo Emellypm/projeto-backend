@@ -17,11 +17,7 @@ enum StatusProduto {
 }
 
 enum StatusPedido {
-  PENDENTE
-  CONFIRMADO
-  EM_PREPARACAO
-  A_CAMINHO
-  ENTREGUE
+  RECEBIDO
   CANCELADO
 }
 
@@ -34,7 +30,6 @@ enum MetodoPagamento {
 enum StatusPagamento {
   PENDENTE
   APROVADO
-  RECUSADO
   CANCELADO
 }
 
@@ -62,17 +57,19 @@ model Clientes {
   @@map("clientes")
 }
 
-model Lojas {
-  id               String     @id @default(uuid())
+model ConfiguracoesLoja {
+  id               String   @id @default("principal")
   nome             String
   descricao        String
   telefone         String
   endereco         String
-  data_criacao     DateTime   @default(now())
-  data_atualizacao DateTime   @updatedAt
-  produtos         Produtos[]
+  cidade           String?
+  estado           String?
+  instagram        String?
+  data_criacao     DateTime @default(now())
+  data_atualizacao DateTime @updatedAt
 
-  @@map("lojas")
+  @@map("configuracoes_loja")
 }
 
 model Categorias {
@@ -86,7 +83,6 @@ model Categorias {
 
 model Produtos {
   id               String              @id @default(uuid())
-  loja_id          String
   nome             String
   descricao        String
   preco            Decimal             @db.Decimal(10, 2)
@@ -96,7 +92,6 @@ model Produtos {
   status           StatusProduto       @default(ATIVO)
   data_criacao     DateTime            @default(now())
   data_atualizacao DateTime            @updatedAt
-  loja             Lojas               @relation(fields: [loja_id], references: [id])
   categorias       Produto_categoria[]
   itens_pedido     Itens_pedido[]
 
@@ -115,23 +110,14 @@ model Produto_categoria {
 }
 
 model Pedidos {
-  id         String @id @default(uuid())
-  cliente_id String
-
-  cep         String
-  rua         String
-  numero      String
-  complemento String?
-  bairro      String
-  cidade      String
-  estado      String
-
-  status         StatusPedido @default(PENDENTE)
-  valor_subtotal Decimal      @db.Decimal(10, 2)
-  valor_entrega  Decimal      @db.Decimal(10, 2)
-  valor_total    Decimal      @db.Decimal(10, 2)
-  observacao     String?
-  data_criacao   DateTime     @default(now())
+  id               String       @id @default(uuid())
+  cliente_id       String
+  status           StatusPedido @default(RECEBIDO)
+  valor_subtotal   Decimal      @db.Decimal(10, 2)
+  valor_total      Decimal      @db.Decimal(10, 2)
+  observacao       String?
+  data_criacao     DateTime     @default(now())
+  data_atualizacao DateTime     @updatedAt
 
   cliente   Clientes       @relation(fields: [cliente_id], references: [id])
   itens     Itens_pedido[]
@@ -155,12 +141,14 @@ model Itens_pedido {
 }
 
 model Pagamentos {
-  id        String          @id @default(uuid())
-  pedido_id String          @unique
-  metodo    MetodoPagamento
-  status    StatusPagamento @default(PENDENTE)
-  valor     Decimal         @db.Decimal(10, 2)
-  pago_em   DateTime?
+  id               String           @id @default(uuid())
+  pedido_id        String           @unique
+  metodo           MetodoPagamento?
+  status           StatusPagamento  @default(PENDENTE)
+  valor            Decimal          @db.Decimal(10, 2)
+  pago_em          DateTime?
+  data_criacao     DateTime         @default(now())
+  data_atualizacao DateTime         @updatedAt
 
   pedido Pedidos @relation(fields: [pedido_id], references: [id])
 
